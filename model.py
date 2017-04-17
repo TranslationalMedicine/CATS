@@ -23,12 +23,16 @@ def split_data():
 
 def feature_selection_fstatistic(X,y):
     X_indices = np.arange(X.shape[-1])
+    # Univariate feature selection with F-test for feature scoring
+    # We use the default selection function: the 10% most significant features
     selector = sk.feature_selection.SelectPercentile(sk.feature_selection.f_classif, percentile=10)
     selector.fit(X, y)
     scores = -np.log10(selector.pvalues_)
     scores /= scores.max()
     plt.bar(X_indices - .45, scores, width=.2,
             label=r'Univariate score ($-Log(p_{value})$)', color='darkorange')
+    
+    # Compare to the weights of an SVM
     clf = sk.svm.SVC(kernel='linear')
     clf.fit(X, y)
     
