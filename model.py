@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import sklearn as sk
+import numpy as np
 
 #Variables
 TEST_SIZE = 0.1
@@ -19,6 +20,40 @@ def import_data():
 def split_data():
     X_train, X_test, y_train, y_test = sk.cross_validation.train_test_split(X, y, test_size=TEST_SIZE, random_state=0)
     return(X_train, X_test, y_train, y_test)
+
+def feature_selection_fstatistic(X,y):
+    X_indices = np.arange(X.shape[-1])
+    selector = sk.feature_selection.SelectPercentile(sk.feature_selection.f_classif, percentile=10)
+    selector.fit(X, y)
+    scores = -np.log10(selector.pvalues_)
+    scores /= scores.max()
+    plt.bar(X_indices - .45, scores, width=.2,
+            label=r'Univariate score ($-Log(p_{value})$)', color='darkorange')
+    clf = sk.svm.SVC(kernel='linear')
+    clf.fit(X, y)
+    
+    svm_weights = (clf.coef_ ** 2).sum(axis=0)
+    svm_weights /= svm_weights.max()
+    
+    plt.bar(X_indices - .25, svm_weights, width=.2, label='SVM weight',
+            color='navy')
+    
+    clf_selected = sk.svm.SVC(kernel='linear')
+    clf_selected.fit(selector.transform(X), y)
+    
+    svm_weights_selected = (clf_selected.coef_ ** 2).sum(axis=0)
+    svm_weights_selected /= svm_weights_selected.max()
+    
+    plt.bar(X_indices[selector.get_support()] - .05, svm_weights_selected,
+            width=.2, label='SVM weights after selection', color='c')
+    
+    
+    plt.title("Comparing feature selection")
+    plt.xlabel('Feature number')
+    plt.yticks(())
+    plt.axis('tight')
+    plt.legend(loc='upper right')
+    plt.show()
     
 def SVC_crossvalidation(X_train,y_train, X_test, y_test):
     #This function performs recursive feature selection with cross validation in a linear SVC model. 
@@ -51,4 +86,5 @@ def SVC_crossvalidation(X_train,y_train, X_test, y_test):
 # main
 X,y = import_data()
 X_train, X_test, y_train, y_test = split_data()
+feature_selection_fstatistic(X_train, y_train)
 features, accuracy, rfecv = SVC_crossvalidation(X_train, y_train, X_test, y_test)
