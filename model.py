@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import sklearn as sk
 
 #Variables
-TEST_SIZE = 0.33
+TEST_SIZE = 0.10
 NUMBER_OF_SAMPLES_CV = 90
 NUMBER_OF_FEATURES_CV = 100
 NUMBER_OF_CLASSES_CV = 3
@@ -28,15 +28,15 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
     svc = sk.svm.SVC(kernel="linear")
     # The "accuracy" scoring is proportional to the number of correct
     # classifications
-    rfecv = sk.feature_selection.RFECV(estimator=svc, step=1, cv=sk.model_selection.StratifiedKFold(3), scoring='accuracy')
+    rfecv = sk.feature_selection.RFECV(estimator=svc, step=1, cv=sk.model_selection.StratifiedKFold(10), scoring='accuracy')
     rfecv.fit(X_train, y_train)
     print("Optimal number of features : %d" % rfecv.n_features_)
     # Plot number of features VS. cross-validation scores
-    '''plt.figure()
+    plt.figure()
     plt.xlabel("Number of features selected")
     plt.ylabel("Cross validation score (nb of correct classifications)")
     plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
-    plt.show()'''
+    plt.show()
     ## Get the selected features 
     #(now we will get the indices of the selected features)
     features=rfecv.get_support(indices=True)
@@ -67,7 +67,7 @@ def accuracy(rfecv, rf):
         plt.plot(i, label= names[count])
         plt.legend(loc='upper right')
         count += 1
-    plt.xlabel('iterration')
+    plt.xlabel('iteration')
     plt.ylabel('Accuracy')
     plt.show()
     
