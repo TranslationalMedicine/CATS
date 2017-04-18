@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import sklearn as sk
 
 #Variables
-TEST_SIZE = 0.10
+TEST_SIZE = 0.33
 NUMBER_OF_SAMPLES_CV = 90
 NUMBER_OF_FEATURES_CV = 100
 NUMBER_OF_CLASSES_CV = 3
@@ -32,11 +32,11 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
     rfecv.fit(X_train, y_train)
     print("Optimal number of features : %d" % rfecv.n_features_)
     # Plot number of features VS. cross-validation scores
-    plt.figure()
+    '''plt.figure()
     plt.xlabel("Number of features selected")
     plt.ylabel("Cross validation score (nb of correct classifications)")
     plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
-    plt.show()
+    plt.show()'''
     ## Get the selected features 
     #(now we will get the indices of the selected features)
     features=rfecv.get_support(indices=True)
@@ -61,14 +61,23 @@ def accuracy(rfecv, rf):
     names = ['Recursive Feature Elimination', 'Random Forest']
     for i in range(len(accuracy_list)):
         print('The average accuracy for %s is: %f' % (names[i], sum(accuracy_list[i])/len(accuracy_list[i])))
-
+    count = 0
+    for i in accuracy_list:
+        i.sort(reverse=True)
+        plt.plot(i, label= names[count])
+        plt.legend(loc='upper right')
+        count += 1
+    plt.xlabel('iterration')
+    plt.ylabel('Accuracy')
+    plt.show()
+    
 # main
 X,y = import_data()
 result_rfecv = {}
 result_rf = {}
 accuracy_list_rfecv =[]
 accuracy_list_rf =[]
-for i in range(100):
+for i in range(10):
     X_train, X_test, y_train, y_test = split_data()
     features_rfecv, accuracy_rfecv, rfecv = recursive_feature_elimination_cv(X_train, y_train, X_test, y_test)
     rf, accuracy_rf = random_forest(X_train,y_train, X_test, y_test)
