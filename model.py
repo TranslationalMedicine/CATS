@@ -1,10 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import sklearn as sk
-import numpy as np
 
 #Variables
-TEST_SIZE = 0.1
+TEST_SIZE = 0.10
 NUMBER_OF_SAMPLES_CV = 90
 NUMBER_OF_FEATURES_CV = 100
 NUMBER_OF_CLASSES_CV = 3
@@ -18,48 +17,10 @@ def import_data():
 
 # returns train and test set
 def split_data():
-    X_train, X_test, y_train, y_test = sk.cross_validation.train_test_split(X, y, test_size=TEST_SIZE, random_state=0)
+    X_train, X_test, y_train, y_test = sk.cross_validation.train_test_split(X, y, test_size=TEST_SIZE)
     return(X_train, X_test, y_train, y_test)
-
-def feature_selection_fstatistic(X,y):
-    X_indices = np.arange(X.shape[-1])
-    # Univariate feature selection with F-test for feature scoring
-    # We use the default selection function: the 10% most significant features
-    selector = sk.feature_selection.SelectPercentile(sk.feature_selection.f_classif, percentile=10)
-    selector.fit(X, y)
-    scores = -np.log10(selector.pvalues_)
-    scores /= scores.max()
-    plt.bar(X_indices - .45, scores, width=.2,
-            label=r'Univariate score ($-Log(p_{value})$)', color='darkorange')
     
-    # Compare to the weights of an SVM
-    clf = sk.svm.SVC(kernel='linear')
-    clf.fit(X, y)
-    
-    svm_weights = (clf.coef_ ** 2).sum(axis=0)
-    svm_weights /= svm_weights.max()
-    
-    plt.bar(X_indices - .25, svm_weights, width=.2, label='SVM weight',
-            color='navy')
-    
-    clf_selected = sk.svm.SVC(kernel='linear')
-    clf_selected.fit(selector.transform(X), y)
-    
-    svm_weights_selected = (clf_selected.coef_ ** 2).sum(axis=0)
-    svm_weights_selected /= svm_weights_selected.max()
-    
-    plt.bar(X_indices[selector.get_support()] - .05, svm_weights_selected,
-            width=.2, label='SVM weights after selection', color='c')
-    
-    
-    plt.title("Comparing feature selection")
-    plt.xlabel('Feature number')
-    plt.yticks(())
-    plt.axis('tight')
-    plt.legend(loc='upper right')
-    plt.show()
-    
-def SVC_crossvalidation(X_train,y_train, X_test, y_test):
+def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
     #This function performs recursive feature selection with cross validation in a linear SVC model. 
       #It returns the selected features and the accuracy of the model in the test data set. 
     
@@ -67,7 +28,7 @@ def SVC_crossvalidation(X_train,y_train, X_test, y_test):
     svc = sk.svm.SVC(kernel="linear")
     # The "accuracy" scoring is proportional to the number of correct
     # classifications
-    rfecv = sk.feature_selection.RFECV(estimator=svc, step=1, cv=sk.model_selection.StratifiedKFold(10), scoring='accuracy')
+    rfecv = sk.feature_selection.RFECV(estimator=svc, step=1, cv=sk.model_selection.StratifiedKFold(3), scoring='accuracy')
     rfecv.fit(X_train, y_train)
     print("Optimal number of features : %d" % rfecv.n_features_)
     # Plot number of features VS. cross-validation scores
@@ -87,8 +48,32 @@ def SVC_crossvalidation(X_train,y_train, X_test, y_test):
     
     return(features, accuracy, rfecv)
 
+def random_forest(X_train,y_train, X_test, y_test):
+    clf = sk.pipeline.Pipeline([
+            ('feature_selection', sk.feature_selection.SelectFromModel(sk.svm.SVC(kernel="linear"))),
+            ('classification', sk.ensemble.RandomForestClassifier())])
+    accuracy = clf.fit(X_train, y_train).score(X_test, y_test)
+    
+    return clf, accuracy
+
+def accuracy(rfecv, rf):
+    accuracy_list = [rfecv, rf]
+    names = ['Recursive Feature Elimination', 'Random Forest']
+    for i in range(len(accuracy_list)):
+        print('The average accuracy for %s is: %f' % (names[i], sum(accuracy_list[i])/len(accuracy_list[i])))
+
 # main
 X,y = import_data()
-X_train, X_test, y_train, y_test = split_data()
-feature_selection_fstatistic(X_train, y_train)
-features, accuracy, rfecv = SVC_crossvalidation(X_train, y_train, X_test, y_test)
+result_rfecv = {}
+result_rf = {}
+accuracy_list_rfecv =[]
+accuracy_list_rf =[]
+for i in range(100):
+    X_train, X_test, y_train, y_test = split_data()
+    features_rfecv, accuracy_rfecv, rfecv = recursive_feature_elimination_cv(X_train, y_train, X_test, y_test)
+    rf, accuracy_rf = random_forest(X_train,y_train, X_test, y_test)
+    result_rfecv[i] = [features_rfecv,accuracy_rfecv,rfecv]
+    result_rf[i] = [accuracy_rf, rf]
+    accuracy_list_rfecv.append(accuracy_rfecv)
+    accuracy_list_rf.append(accuracy_rf)
+accuracy(accuracy_list_rfecv, accuracy_list_rf)
