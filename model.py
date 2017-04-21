@@ -54,8 +54,8 @@ def random_forest(X_train,y_train, X_test, y_test):
             ('classification', sk.ensemble.RandomForestClassifier())])
     accuracy = clf.fit(X_train, y_train).score(X_test, y_test)
     
-    #TO DO: return number of features selected 
-    #TO DO: Return average rank of the features
+    #TO DO: return number of features selected (with model.n_features)
+    #TO DO: Return average rank of the features with(model.ranking_)
     
     return clf, accuracy
 
@@ -96,5 +96,5 @@ accuracy(accuracy_list_rfecv, accuracy_list_rf)
 
 #TO DO in a new script (see Templates of run_model Scirpts):
 # Predict the labels of the new data set (with rfecv.predict(newdata)) for each of the 100 created models 
-# and calculate how many times a sample is assigned to each group. 
+# and calculate how many times a sample is assigned to each group. Assign sample to group with the highest value
 
