@@ -1,6 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import sklearn as sk
+from sklearn.cross_validation import train_test_split
+from sklearn.feature_selection import RFECV, SelectFromModel
+from sklearn.model_selection import StratifiedKFold
+from sklearn.svm import SVC
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
 
 #Variables
 TEST_SIZE = 0.10
@@ -17,7 +22,7 @@ def import_data():
 
 # returns train and test set
 def split_data():
-    X_train, X_test, y_train, y_test = sk.cross_validation.train_test_split(X, y, test_size=TEST_SIZE)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE)
     return(X_train, X_test, y_train, y_test)
     
 def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
@@ -25,12 +30,12 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
       #It returns the selected features and the accuracy of the model in the test data set. 
     
     # Create the RFE object and compute a cross-validated score.
-    svc = sk.svm.SVC(kernel="linear")
+    svc = SVC(kernel="linear")
     # The "accuracy" scoring is proportional to the number of correct
     # classifications
-    rfecv = sk.feature_selection.RFECV(estimator=svc, step=1, cv=sk.model_selection.StratifiedKFold(10), scoring='accuracy')
+    rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(10), scoring='accuracy')
     rfecv.fit(X_train, y_train)
-    Nfeatures =rfecv.n_features
+    Nfeatures =rfecv.n_features_
     # Plot number of features VS. cross-validation scores
     #plt.figure()
     #plt.xlabel("Number of features selected")
@@ -49,9 +54,9 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
     return(features, accuracy, rfecv, RankFeatures, Nfeatures)
 
 def random_forest(X_train,y_train, X_test, y_test):
-    clf = sk.pipeline.Pipeline([
-            ('feature_selection', sk.feature_selection.SelectFromModel(sk.svm.SVC(kernel="linear"))),
-            ('classification', sk.ensemble.RandomForestClassifier())])
+    clf = Pipeline([
+            ('feature_selection', SelectFromModel(sk.svm.SVC(kernel="linear"))),
+            ('classification', RandomForestClassifier())])
     accuracy = clf.fit(X_train, y_train).score(X_test, y_test)
     
     #TO DO: return number of features selected (with model.n_features)
@@ -80,7 +85,7 @@ result_rfecv = {}
 result_rf = {}
 accuracy_list_rfecv =[]
 accuracy_list_rf =[]
-for i in range(10):
+for i in range(5):
     X_train, X_test, y_train, y_test = split_data()
     features_rfecv, accuracy_rfecv, rfecv, rankfeatures_rfecv, Nfeaures_rfecv = recursive_feature_elimination_cv(X_train, y_train, X_test, y_test)
     rf, accuracy_rf = random_forest(X_train,y_train, X_test, y_test)
@@ -88,7 +93,7 @@ for i in range(10):
     result_rf[i] = [accuracy_rf, rf]
     accuracy_list_rfecv.append(accuracy_rfecv)
     accuracy_list_rf.append(accuracy_rf)
-    print('finished round;'+i)
+    print('finished round;', i+1)
 accuracy(accuracy_list_rfecv, accuracy_list_rf)
 #TO DO: calculate average number of features selected and SD
 #TO DO: Calcalate average rank of the features 
@@ -97,4 +102,3 @@ accuracy(accuracy_list_rfecv, accuracy_list_rf)
 #TO DO in a new script (see Templates of run_model Scirpts):
 # Predict the labels of the new data set (with rfecv.predict(newdata)) for each of the 100 created models 
 # and calculate how many times a sample is assigned to each group. Assign sample to group with the highest value
-
