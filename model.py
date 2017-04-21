@@ -55,7 +55,7 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
 
 def random_forest(X_train,y_train, X_test, y_test):
     clf = Pipeline([
-            ('feature_selection', SelectFromModel(sk.svm.SVC(kernel="linear"))),
+            ('feature_selection', SelectFromModel(SVC(kernel="linear"))),
             ('classification', RandomForestClassifier())])
     accuracy = clf.fit(X_train, y_train).score(X_test, y_test)
     
