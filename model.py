@@ -10,19 +10,23 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.externals import joblib
 from operator import itemgetter
+from sklearn import preprocessing
+le = preprocessing.LabelEncoder()
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_ITERATIONS = 5
+NUMBER_OF_ITERATIONS = 2
 
 # import data
 def import_data():
     data=pd.read_table('Complied-Data.txt', sep='\t', delimiter=None, delim_whitespace=False, header=0, index_col=0)
     X = (data.iloc[0:100, 1:150]) #NB: 150 is feature 1:149 for now, because of the long running time
     y = data.iloc[0:100,0]
+    le.fit(y)
+    y=le.transform(y)
     return(X,y)
 
-# returns train and test set
+# returns trainset and testset
 def split_data():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE)
     return(X_train, X_test, y_train, y_test)
@@ -44,16 +48,14 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
     #plt.ylabel("Cross validation score (nb of correct classifications)")
     #plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
     #plt.show()
-    
-    # Get the selected features 
-    features=rfecv.get_support(indices=True)
+
     #This will give the ranking of the features
     RankFeatures=rfecv.ranking_
     
     #Determine the accuracy of the SVC model on the test-data 
     accuracy=rfecv.score(X_test, y_test)
     
-    return(rfecv, accuracy, features, RankFeatures, Nfeatures)
+    return [rfecv, accuracy, Nfeatures, RankFeatures]
 
 def random_forest(X_train,y_train, X_test, y_test):
     feature_selection = SelectFromModel(SVC(kernel="linear"))
@@ -67,7 +69,7 @@ def random_forest(X_train,y_train, X_test, y_test):
     Nfeatures = classification.n_features_
     RankFeatures=classification.feature_importances_
     
-    return clf, accuracy, Nfeatures,RankFeatures
+    return [clf, accuracy, Nfeatures, RankFeatures]
 
 def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
     accuracy_list = [acc_rfecv, acc_rf]
@@ -76,6 +78,7 @@ def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
     for i in range(len(accuracy_list)):
         print('The average accuracy for %s is: %.3f +/- %.3f'  % (names[i], np.mean(accuracy_list[i]), np.std(accuracy_list[i])))
         print('The average used number of features for %s is: %.3f +/- %.3f' % (names[i], np.mean(features_list[i]), np.std(features_list[i])))
+    
     count = 0
     for i in accuracy_list:
         i.sort(reverse=True)
@@ -99,43 +102,40 @@ def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
         best_method, highest_accuracy = 'equal', highest_rfecv
     return best_method, highest_accuracy
 
-#def model_with_highest_accuracy():
+def save_best_model(best_method, result_rfecv, result_rf):
+    if best_method == 'rfecv':
+        models_list = result_rfecv
+    else:
+        models_list = result_rf
+    models_list = sorted(models_list, key=itemgetter(1), reverse=True)
+    #save best model
+    joblib.dump(models_list[0][0], 'model.pkl')
+    #print(models_list.index(max(models_list[0])))
     
+def create_output(rfecv_list, rf_list):
+    accuracy_rfecv = [item[1] for item in rfecv_list]
+    accuracy_rf = [item[1] for item in rf_list]
+    Nfeatures_rfecv = [item[2] for item in rfecv_list]
+    Nfeatures_rf = [item[2] for item in rf_list]
+    best_method, highest_accuracy = accuracy_and_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)   
+    save_best_model(best_method, rfecv_list, rf_list)
     
     
 # main
 X,y = import_data()
-result_rfecv = []
-result_rf = []
-accuracy_list_rfecv =[]
-accuracy_list_rf =[]
-Nfeatures_list_rf = []
-Nfeatures_list_rfecv = []
+rfecv_list = []
+rf_list = []
 
 for i in range(NUMBER_OF_ITERATIONS):
     X_train, X_test, y_train, y_test = split_data()
-    rfecv, accuracy_rfecv, features_rfecv, rankfeatures_rfecv, Nfeatures_rfecv = recursive_feature_elimination_cv(X_train, y_train, X_test, y_test)
-    rf, accuracy_rf, Nfeatures_rf, RankFeatures_rf = random_forest(X_train,y_train, X_test, y_test)
-    result_rfecv.append([accuracy_rfecv, rfecv])
-    result_rf.append([accuracy_rf, rf])
-    accuracy_list_rfecv.append(accuracy_rfecv)
-    accuracy_list_rf.append(accuracy_rf)
-    Nfeatures_list_rfecv.append(Nfeatures_rfecv)
-    Nfeatures_list_rf.append(Nfeatures_rf)
+    rfecv_list.append(recursive_feature_elimination_cv(X_train, y_train, X_test, y_test))
+    rf_list.append(random_forest(X_train,y_train, X_test, y_test))
     print('finished round %d out of %d' %  (i+1, NUMBER_OF_ITERATIONS))
-best_method, highest_accuracy = accuracy_and_features(accuracy_list_rfecv, accuracy_list_rf, Nfeatures_list_rf, Nfeatures_list_rfecv)
-print(best_method, highest_accuracy)
-if best_method == 'rfecv':
-    models_list = result_rfecv
-else:
-    models_list = result_rf
-models_list = sorted(models_list, key=itemgetter(0), reverse=True)
-print(models_list[0][1])
-#save best model
-joblib.dump(models_list[0][1], 'model.pkl')
-#print(models_list.index(max(models_list[0])))
 
-#model_with_highest_accuracy(highest_accuracy)
+
+create_output(rfecv_list, rf_list)
+
+
 #TO DO: Calcalate average rank of the features 
 
 #TO DO in a new script (see Templates of run_model Scirpts):
