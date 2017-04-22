@@ -19,12 +19,10 @@ WrongCount = 0
 for i in range(len(X)):
     pred = 0
     pred += clf.predict(np.array(X.values[i].reshape(1,-1), dtype=np.float64))
-    guess = 0 if pred <= 1 else 1
-    if guess == y[i]:
-        #print('Correct')
+    print(pred, y[i])
+    if pred == y[i]:
         CorrectCount += 1 
     else:
-        #print('Wrong')
         WrongCount += 1
 print('Accuracy: ',CorrectCount/len(X))
 print('Correct Predictions: ',CorrectCount)
