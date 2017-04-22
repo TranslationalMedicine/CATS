@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.cross_validation import train_test_split
 from sklearn.feature_selection import RFECV, SelectFromModel
 from sklearn.model_selection import StratifiedKFold
@@ -54,21 +55,24 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
     return(features, accuracy, rfecv, RankFeatures, Nfeatures)
 
 def random_forest(X_train,y_train, X_test, y_test):
+    feature_selection = SelectFromModel(SVC(kernel="linear"))
+    classification = RandomForestClassifier()
     clf = Pipeline([
-            ('feature_selection', SelectFromModel(SVC(kernel="linear"))),
-            ('classification', RandomForestClassifier())])
+            ('feature_selection', feature_selection),
+            ('classification', classification)])
     accuracy = clf.fit(X_train, y_train).score(X_test, y_test)
+    Nfeatures = classification.n_features_
+    RankFeatures=classification.feature_importances_
     
-    #TO DO: return number of features selected (with model.n_features)
-    #TO DO: Return average rank of the features with(model.ranking_)
-    
-    return clf, accuracy
+    return clf, accuracy, Nfeatures,RankFeatures
 
-def accuracy(rfecv, rf):
-    accuracy_list = [rfecv, rf]
+def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
+    accuracy_list = [acc_rfecv, acc_rf]
+    features_list = [f_rfecv, f_rf]
     names = ['Recursive Feature Elimination', 'Random Forest']
     for i in range(len(accuracy_list)):
-        print('The average accuracy for %s is: %f' % (names[i], sum(accuracy_list[i])/len(accuracy_list[i])))
+        print('The average accuracy for %s is: %.3f +/- %.3f'  % (names[i], np.mean(accuracy_list[i]), np.std(accuracy_list[i])))
+        print('The average used number of features for %s is: %.3f +/- %.3f' % (names[i], np.mean(features_list[i]), np.std(features_list[i])))
     count = 0
     for i in accuracy_list:
         i.sort(reverse=True)
@@ -85,19 +89,23 @@ result_rfecv = {}
 result_rf = {}
 accuracy_list_rfecv =[]
 accuracy_list_rf =[]
+Nfeatures_list_rf = []
+Nfeatures_list_rfecv = []
+
 for i in range(5):
     X_train, X_test, y_train, y_test = split_data()
-    features_rfecv, accuracy_rfecv, rfecv, rankfeatures_rfecv, Nfeaures_rfecv = recursive_feature_elimination_cv(X_train, y_train, X_test, y_test)
-    rf, accuracy_rf = random_forest(X_train,y_train, X_test, y_test)
+    features_rfecv, accuracy_rfecv, rfecv, rankfeatures_rfecv, Nfeatures_rfecv = recursive_feature_elimination_cv(X_train, y_train, X_test, y_test)
+    rf, accuracy_rf, Nfeatures_rf, RankFeatures_rf = random_forest(X_train,y_train, X_test, y_test)
     result_rfecv[i] = [features_rfecv,accuracy_rfecv,rfecv]
     result_rf[i] = [accuracy_rf, rf]
     accuracy_list_rfecv.append(accuracy_rfecv)
     accuracy_list_rf.append(accuracy_rf)
+    Nfeatures_list_rf.append(Nfeatures_rf)
+    Nfeatures_list_rfecv.append(Nfeatures_rfecv)
     print('finished round;', i+1)
-accuracy(accuracy_list_rfecv, accuracy_list_rf)
-#TO DO: calculate average number of features selected and SD
+accuracy_and_features(accuracy_list_rfecv, accuracy_list_rf, Nfeatures_list_rf, Nfeatures_list_rfecv)
+
 #TO DO: Calcalate average rank of the features 
-#TO DO: Calculate average accuracy and SD
 
 #TO DO in a new script (see Templates of run_model Scirpts):
 # Predict the labels of the new data set (with rfecv.predict(newdata)) for each of the 100 created models 
