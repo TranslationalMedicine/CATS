@@ -1,18 +1,18 @@
+#import packages
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.cross_validation import train_test_split
 from sklearn.feature_selection import RFECV, SelectFromModel
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.svm import SVC
-from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.externals import joblib
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_SAMPLES_CV = 90
-NUMBER_OF_FEATURES_CV = 100
-NUMBER_OF_CLASSES_CV = 3
+NUMBER_OF_ITERATIONS = 5
 
 # import data
 def import_data():
@@ -60,7 +60,9 @@ def random_forest(X_train,y_train, X_test, y_test):
     clf = Pipeline([
             ('feature_selection', feature_selection),
             ('classification', classification)])
-    accuracy = clf.fit(X_train, y_train).score(X_test, y_test)
+    scores = cross_val_score(clf, X, y, cv=10, scoring='accuracy')
+    clf = clf.fit(X_train, y_train)
+    accuracy = clf.score(X_test, y_test)
     Nfeatures = classification.n_features_
     RankFeatures=classification.feature_importances_
     
@@ -83,6 +85,9 @@ def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
     plt.ylabel('Accuracy')
     plt.show()
     
+#def save_trained_calssifier():
+    
+    
 # main
 X,y = import_data()
 result_rfecv = {}
@@ -92,7 +97,7 @@ accuracy_list_rf =[]
 Nfeatures_list_rf = []
 Nfeatures_list_rfecv = []
 
-for i in range(5):
+for i in range(NUMBER_OF_ITERATIONS):
     X_train, X_test, y_train, y_test = split_data()
     features_rfecv, accuracy_rfecv, rfecv, rankfeatures_rfecv, Nfeatures_rfecv = recursive_feature_elimination_cv(X_train, y_train, X_test, y_test)
     rf, accuracy_rf, Nfeatures_rf, RankFeatures_rf = random_forest(X_train,y_train, X_test, y_test)
@@ -100,9 +105,11 @@ for i in range(5):
     result_rf[i] = [accuracy_rf, rf]
     accuracy_list_rfecv.append(accuracy_rfecv)
     accuracy_list_rf.append(accuracy_rf)
-    Nfeatures_list_rf.append(Nfeatures_rf)
     Nfeatures_list_rfecv.append(Nfeatures_rfecv)
-    print('finished round;', i+1)
+    Nfeatures_list_rf.append(Nfeatures_rf)
+    print('finished round %d out of %d' %  (i+1, NUMBER_OF_ITERATIONS))
+    name = 'model' + str(i+1) + '.pkl'
+    joblib.dump(rf, name)
 accuracy_and_features(accuracy_list_rfecv, accuracy_list_rf, Nfeatures_list_rf, Nfeatures_list_rfecv)
 
 #TO DO: Calcalate average rank of the features 
