@@ -130,7 +130,6 @@ def frequency_plots(Nfeatures_rfecv, Nfeatures_rf):
         labels, values = zip(*c.items())
         indexes = np.arange(len(labels))
         width = 0.5   
-        print(values)
         plt.bar(indexes, values, width)
         plt.xticks(indexes + width * 0.5, labels)
         plt.xlabel('Number of used features')
