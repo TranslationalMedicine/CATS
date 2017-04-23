@@ -1,38 +1,4 @@
-#### only for testing!
-### should be run like this. python3 run_model.py -i unlabelled_sample.txt -m model.pkl -o output.txt
-
-from sklearn.externals import joblib
-import pandas as pd
-import numpy as np
-from sklearn import preprocessing
-le = preprocessing.LabelEncoder()
-
-#input for this should be unlabelled data file
-data=pd.read_table('Complied-Data.txt', sep='\t', delimiter=None, delim_whitespace=False, header=0, index_col=0)
-X = (data.iloc[0:100, 1:150]) #NB: 150 is feature 1:149 for now, because of the long running time
-y = data.iloc[0:100,0]
-le.fit(y)
-y=le.transform(y)
-clf = joblib.load('model.pkl') 
-
-CorrectCount = 0
-WrongCount = 0
-for i in range(len(X)):
-    pred = 0
-    pred += clf.predict(np.array(X.values[i].reshape(1,-1), dtype=np.float64))
-    print(pred, y[i])
-    if pred == y[i]:
-        CorrectCount += 1 
-    else:
-        WrongCount += 1
-print('Accuracy: ',CorrectCount/len(X))
-print('Correct Predictions: ',CorrectCount)
-print('Incorrect Predictions: ',WrongCount)
-
-
-
-
-'''#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Reproduce your result by your saved model.
 
 This is a script that helps reproduce your prediction results using your saved
@@ -46,16 +12,23 @@ python3 run_model.py -i unlabelled_sample.txt -m model.pkl -o output.txt
 
 """
 
-
-
 # author: Chao (Cico) Zhang
 # date: 31 Mar 2017
 
 import argparse
 import sys
+from sklearn.externals import joblib
+import numpy as np
+import pandas as pd
+
 # Start your coding
 
 # import the library you need here
+def import_samples(): 
+	#input for this should be unlabelled data file
+	data=pd.read_table('Complied-Data.txt', sep='\t', delimiter=None, delim_whitespace=False, header=0, index_col=0)
+	X = (data.iloc[0:100, 1:2835]) #NB: 150 is feature 1:149 for now, because of the long running time
+	return (X)
 
 # End your coding
 
@@ -85,15 +58,40 @@ def main():
         sys.exit('Output is not designated!')
 
     # Start your coding
-
     # suggested steps
     # Step 1: load the model from the model file
     # Step 2: apply the model to the input file to do the prediction
     # Step 3: write the prediction into the desinated output file
+    output=str(sys.argv[3])	
+    model_file=str(sys.argv[2])
+    X=import_samples()
+    model = joblib.load('model.pkl') 
+    predictions=(model.predict(X))
+    predictions=predictions.tolist()
+
+    #changes output labels (0,1,2) to cancer type labels
+    for i in range(0,len(predictions)):
+    	if predictions[i]==0:
+    		predictions[i]="HER2+"
+    	elif predictions[i]==1:
+    		predictions[i]="HR+"
+    	elif predictions[i]==2:
+    		predictions[i]="Triple negative"
+
+    #writing to output file			
+    outputFile = open(output,"w")		
+    for i in range(0,len(X.index)):
+    	outputFile.write(X.index[i] + "\t" + predictions[i] + "\n")
+    	print (X.index[i], predictions[i])
+    outputFile.close()	
+   
+
+    
+    
+    
 
     # End your coding
 
 
 if __name__ == '__main__':
     main()
-'''
