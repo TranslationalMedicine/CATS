@@ -17,12 +17,12 @@ le = preprocessing.LabelEncoder()
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_ITERATIONS = 3
+NUMBER_OF_ITERATIONS = 100
 
 # import data
 def import_data():
     data=pd.read_table('Complied-Data.txt', sep='\t', delimiter=None, delim_whitespace=False, header=0, index_col=0)
-    X = (data.iloc[0:100, 1:50])
+    X = (data.iloc[0:100, 1:-1])
     y = data.iloc[0:100,0]
     feature_names=(list(data))
     le.fit(y)
@@ -74,13 +74,13 @@ def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
     
     count = 0
     for i in accuracy_list:
-        i.sort(reverse=True)
         plt.plot(i, label= names[count])
-        plt.legend(loc='upper right')
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         count+=1
     #plot accuracy versus iteration    
-    plt.xlabel('iteration')
+    plt.xlabel('Number of iteration')
     plt.ylabel('Accuracy')
+    plt.savefig('iteration_accuracy.pdf', bbox_inches='tight')
     plt.show()
 
 #makes a plot of the accuracy+std of both methods
@@ -113,7 +113,8 @@ def accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeat
     rf = plt.scatter(Nfeatures_rf, accuracy_rf, marker='o', color='g')
     plt.xlabel('Number of used features')
     plt.ylabel('Accuracy')
-    plt.legend((rfecv, rf), ('SVM-RFE', 'RF-SVM') , loc='upper right')
+    plt.legend((rfecv, rf), ('SVM-RFE', 'RF-SVM') , loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.savefig('accuracy_versus_feat.pdf', bbox_inches='tight')
     plt.show()
 
     Nfeatures_rfecv.sort() 
@@ -124,19 +125,24 @@ def accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeat
 def frequency_plots(Nfeatures_rfecv, Nfeatures_rf):
     method = [Nfeatures_rfecv, Nfeatures_rf]
     for i in method:
-        labels, values = zip(*Counter(i).items())
+        c=Counter(i)
+        c = { k:v for k, v in c.items() if v != 1}
+        labels, values = zip(*c.items())
         indexes = np.arange(len(labels))
-        width = 0.5    
+        width = 0.5   
+        print(values)
         plt.bar(indexes, values, width)
         plt.xticks(indexes + width * 0.5, labels)
         plt.xlabel('Number of used features')
         plt.ylabel('Frequency')
         if i == Nfeatures_rfecv:
             plt.title('Frequency of the used number of features for SVM-RFE')
+            plt.savefig('frequency_features_rfe.pdf', bbox_inches='tight')
         else:
             plt.title('Frequency of the used number of features for RF-SVM')
+            plt.savefig('frequency_features_rf.pdf', bbox_inches='tight')
         plt.show()
-
+        
 #plots the most important features    
 def most_important_features(method_list, method_name):
     new_list = []
@@ -158,7 +164,7 @@ def most_important_features(method_list, method_name):
         region.append(iteration[1])  
     c = Counter(region)
     c=c.most_common()
-    labels, values = zip(*c)
+    labels, values = zip(*c[0:25])
     indexes = np.arange(len(labels))
     width = 0.5
     plt.bar(indexes, values, width)
@@ -166,6 +172,7 @@ def most_important_features(method_list, method_name):
     plt.xlabel('Feature')
     plt.ylabel('Frequency of 25 highest ranked features')
     plt.title('Frequency of the most important features for %s' % (method_name))
+    plt.savefig('ranking'+method_name+'.pdf', bbox_inches='tight')
     plt.show()
 
 #create some output like accuracy and number of features and execute different functions for figures
