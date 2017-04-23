@@ -5,7 +5,7 @@ import numpy as np
 from itertools import chain
 from sklearn.cross_validation import train_test_split
 from sklearn.feature_selection import RFECV, SelectFromModel
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score, KFold
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
@@ -17,7 +17,7 @@ le = preprocessing.LabelEncoder()
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_ITERATIONS = 10
+NUMBER_OF_ITERATIONS = 100
 
 # import data
 def import_data():
@@ -42,7 +42,7 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
     svc = SVC(kernel="linear")
     # The "accuracy" scoring is proportional to the number of correct
     # classifications
-    rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(10), scoring='accuracy')
+    rfecv = RFECV(estimator=svc, step=1, cv=KFold(10), scoring='accuracy')
     rfecv.fit(X_train, y_train)
     Nfeatures =rfecv.n_features_
     # Plot number of features VS. cross-validation scores
@@ -168,8 +168,7 @@ def frequency_plots(Nfeatures_rfecv, Nfeatures_rf):
             plt.title('Frequency of the used number of features for Random Forest')
         plt.show()
     
-    
-'''def most_important_features(rfecv_list, rf_list):
+def most_important_features(rfecv_list, rf_list):
     new_list = []
     important_features_rfecv = []
     global feature_names
@@ -179,20 +178,34 @@ def frequency_plots(Nfeatures_rfecv, Nfeatures_rf):
             new_list.append([feature, feature_names[count]])
             count += 1
         new_list.sort(reverse=True)
-        important_features_rfecv.append(new_list[0:51])
+    important_features_rfecv.append(new_list[0:26])
     merged = list(chain(*important_features_rfecv))
-    print(merged)   
-    print(Counter(chain(merged)))'''
+    merged.sort(reverse=True)
+    rank = []
+    region = []
+    for iteration in merged:
+        rank.append(iteration[0])
+        region.append(iteration[1])  
+    c = Counter(region)
+    c=c.most_common()
+    #c.sort(key=itemgetter(1))
+    labels, values = zip(*c)
+    indexes = np.arange(len(labels))
+    width = 0.5
+    plt.bar(indexes, values, width)
+    plt.xticks(indexes + width * 0.5, labels, rotation = 'vertical')
+    plt.xlabel('Chromosome region')
+    plt.ylabel('Frequency of feature as part of the top 25 features with the highest ranking')
+    plt.title('Frequency of the most important features for Recursive Feature Elimination')
+    plt.show()
 
-
-    
 def create_output(rfecv_list, rf_list):
     accuracy_rfecv = [item[1] for item in rfecv_list]
     accuracy_rf = [item[1] for item in rf_list]
     Nfeatures_rfecv = [item[2] for item in rfecv_list]
     Nfeatures_rf = [item[2] for item in rf_list]
     
-   # most_important_features(rfecv_list, rf_list)
+    most_important_features(rfecv_list, rf_list)
     best_method, highest_accuracy = accuracy_and_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)   
     save_best_model(best_method, rfecv_list, rf_list)
     accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)
