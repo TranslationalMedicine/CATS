@@ -17,7 +17,7 @@ le = preprocessing.LabelEncoder()
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_ITERATIONS = 100
+NUMBER_OF_ITERATIONS = 3
 
 # import data
 def import_data():
@@ -168,18 +168,18 @@ def frequency_plots(Nfeatures_rfecv, Nfeatures_rf):
             plt.title('Frequency of the used number of features for Random Forest')
         plt.show()
     
-def most_important_features(rfecv_list, rf_list):
+def most_important_features(method_list, method_name):
     new_list = []
-    important_features_rfecv = []
+    important_features = []
     global feature_names
-    for i in rfecv_list:
+    for i in method_list:
         count = 1
         for feature in i[3]:
             new_list.append([feature, feature_names[count]])
             count += 1
         new_list.sort(reverse=True)
-    important_features_rfecv.append(new_list[0:26])
-    merged = list(chain(*important_features_rfecv))
+    important_features.append(new_list[0:26])
+    merged = list(chain(*important_features))
     merged.sort(reverse=True)
     rank = []
     region = []
@@ -188,7 +188,6 @@ def most_important_features(rfecv_list, rf_list):
         region.append(iteration[1])  
     c = Counter(region)
     c=c.most_common()
-    #c.sort(key=itemgetter(1))
     labels, values = zip(*c)
     indexes = np.arange(len(labels))
     width = 0.5
@@ -196,7 +195,7 @@ def most_important_features(rfecv_list, rf_list):
     plt.xticks(indexes + width * 0.5, labels, rotation = 'vertical')
     plt.xlabel('Chromosome region')
     plt.ylabel('Frequency of feature as part of the top 25 features with the highest ranking')
-    plt.title('Frequency of the most important features for Recursive Feature Elimination')
+    plt.title('Frequency of the most important features for %s' % (method_name))
     plt.show()
 
 def create_output(rfecv_list, rf_list):
@@ -205,7 +204,8 @@ def create_output(rfecv_list, rf_list):
     Nfeatures_rfecv = [item[2] for item in rfecv_list]
     Nfeatures_rf = [item[2] for item in rf_list]
     
-    most_important_features(rfecv_list, rf_list)
+    most_important_features(rfecv_list, 'Recusive Feature Elimination')
+    most_important_features(rf_list, 'Random Forest')
     best_method, highest_accuracy = accuracy_and_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)   
     save_best_model(best_method, rfecv_list, rf_list)
     accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)
