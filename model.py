@@ -2,10 +2,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from statistics import median
 from itertools import chain
 from sklearn.cross_validation import train_test_split
 from sklearn.feature_selection import RFECV, SelectFromModel
-from sklearn.model_selection import StratifiedKFold, cross_val_score, KFold
+from sklearn.model_selection import cross_val_score, KFold
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
@@ -121,7 +122,6 @@ def bar_plot_accuracy(mean_rfecv, mean_rf, std_rfecv, std_rf):
     rects1 = ax.bar(ind, mean_rfecv, width, color='b', yerr=std_rfecv)
     rects2 = ax.bar(ind + width, mean_rf, width, color='g', yerr=std_rf)
     
-
     ax.set_ylabel('Accuracy')
     xTickMarks = (('', ''))
     xtickNames = ax.set_xticklabels(xTickMarks)
@@ -130,14 +130,11 @@ def bar_plot_accuracy(mean_rfecv, mean_rf, std_rfecv, std_rf):
     plt.ylim((0,1))
     plt.show()
     
-def save_best_model(best_method, result_rfecv, result_rf):
-    if best_method == 'rfecv':
-        models_list = result_rfecv
-    else:
-        models_list = result_rf
+def save_best_model(models_list, accuracy_rfecv):
     models_list = sorted(models_list, key=itemgetter(1), reverse=True)
-    #save best model
-    joblib.dump(models_list[0][0], 'model.pkl')
+    number = NUMBER_OF_ITERATIONS/2
+    joblib.dump(models_list[int(number)][0], 'model.pkl')
+    print(models_list[int(number)][0])
 
 def accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf):
     
@@ -178,7 +175,7 @@ def most_important_features(method_list, method_name):
             new_list.append([feature, feature_names[count]])
             count += 1
         new_list.sort(reverse=True)
-    important_features.append(new_list[0:26])
+        important_features.append(new_list[0:25])
     merged = list(chain(*important_features))
     merged.sort(reverse=True)
     rank = []
@@ -207,7 +204,7 @@ def create_output(rfecv_list, rf_list):
     most_important_features(rfecv_list, 'Recusive Feature Elimination')
     most_important_features(rf_list, 'Random Forest')
     best_method, highest_accuracy = accuracy_and_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)   
-    save_best_model(best_method, rfecv_list, rf_list)
+    save_best_model(rfecv_list, accuracy_rfecv)
     accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)
     
 # main
@@ -221,11 +218,7 @@ for i in range(NUMBER_OF_ITERATIONS):
     rf_list.append(random_forest(X_train,y_train, X_test, y_test))
     print('finished round %d out of %d' %  (i+1, NUMBER_OF_ITERATIONS))
 
-
 create_output(rfecv_list, rf_list)
-
-
-#TO DO: Calcalate average rank of the features 
 
 #TO DO in a new script (see Templates of run_model Scirpts):
 # Predict the labels of the new data set (with rfecv.predict(newdata)) for each of the 100 created models 
