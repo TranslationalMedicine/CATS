@@ -17,7 +17,7 @@ le = preprocessing.LabelEncoder()
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_ITERATIONS = 100
+NUMBER_OF_ITERATIONS = 10
 
 # import data
 def import_data():
@@ -148,6 +148,27 @@ def accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeat
     plt.legend((rfecv, rf), ('Recursive Feature Elimination', 'Random Forest') , loc='upper right')
     plt.show()
 
+    Nfeatures_rfecv.sort() 
+    Nfeatures_rf.sort()
+    frequency_plots(Nfeatures_rfecv, Nfeatures_rf)
+    
+def frequency_plots(Nfeatures_rfecv, Nfeatures_rf):
+    method = [Nfeatures_rfecv, Nfeatures_rf]
+    for i in method:
+        labels, values = zip(*Counter(i).items())
+        indexes = np.arange(len(labels))
+        width = 0.5    
+        plt.bar(indexes, values, width)
+        plt.xticks(indexes + width * 0.5, labels)
+        plt.xlabel('Number of used features')
+        plt.ylabel('Frequency')
+        if i == Nfeatures_rfecv:
+            plt.title('Frequency of the used number of features for Recursive Feature Elimination')
+        else:
+            plt.title('Frequency of the used number of features for Random Forest')
+        plt.show()
+    
+    
 '''def most_important_features(rfecv_list, rf_list):
     new_list = []
     important_features_rfecv = []
