@@ -17,12 +17,12 @@ le = preprocessing.LabelEncoder()
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_ITERATIONS = 100
+NUMBER_OF_ITERATIONS = 10
 
 # import data
 def import_data():
     data=pd.read_table('Complied-Data.txt', sep='\t', delimiter=None, delim_whitespace=False, header=0, index_col=0)
-    X = (data.iloc[0:100, 1:-1]) #NB: 150 is feature 1:149 for now, because of the long running time
+    X = (data.iloc[0:100, 1:50]) #NB: 150 is feature 1:149 for now, because of the long running time
     y = data.iloc[0:100,0]
     feature_names=(list(data))
     le.fit(y)
@@ -103,8 +103,32 @@ def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
         best_method, highest_accuracy = 'rf', highest_rf
     else:
         best_method, highest_accuracy = 'equal', highest_rfecv
+    mean_rfecv = np.mean(acc_rfecv)
+    mean_rf = np.mean(acc_rf)
+    std_rfecv = np.std(acc_rfecv)
+    std_rf = np.std(acc_rf)
+    bar_plot_accuracy(mean_rfecv, mean_rf, std_rfecv, std_rf)
     return best_method, highest_accuracy
 
+def bar_plot_accuracy(mean_rfecv, mean_rf, std_rfecv, std_rf):
+
+    fig, ax = plt.subplots()
+    N=1
+    width = 0.5
+    ind = np.arange(N)
+    rects1 = ax.bar(ind, mean_rfecv, width, color='b', yerr=std_rfecv)
+    rects2 = ax.bar(ind + width, mean_rf, width, color='g', yerr=std_rf)
+    
+    # add some text for labels, title and axes ticks
+    ax.set_ylabel('Accuracy')
+
+    xTickMarks = (('', ''))
+    xtickNames = ax.set_xticklabels(xTickMarks)
+    plt.setp(xtickNames, rotation=45, fontsize=10)
+    ax.legend((rects1[0], rects2[0]), ('Recursive Feature Elimination', 'Random Forest'))
+    plt.ylim((0,1))
+    plt.show()
+    
 def save_best_model(best_method, result_rfecv, result_rf):
     if best_method == 'rfecv':
         models_list = result_rfecv
