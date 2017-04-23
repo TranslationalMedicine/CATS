@@ -164,7 +164,7 @@ def most_important_features(method_list, method_name):
     plt.bar(indexes, values, width)
     plt.xticks(indexes + width * 0.5, labels, rotation = 'vertical')
     plt.xlabel('Feature')
-    plt.ylabel('Frequency of feature as part of the top 25 features with the highest ranking')
+    plt.ylabel('Frequency of 25 highest ranked features')
     plt.title('Frequency of the most important features for %s' % (method_name))
     plt.show()
 
