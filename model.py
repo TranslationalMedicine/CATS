@@ -2,6 +2,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from itertools import chain
 from sklearn.cross_validation import train_test_split
 from sklearn.feature_selection import RFECV, SelectFromModel
 from sklearn.model_selection import StratifiedKFold, cross_val_score
@@ -11,20 +12,22 @@ from sklearn.pipeline import Pipeline
 from sklearn.externals import joblib
 from operator import itemgetter
 from sklearn import preprocessing
+from collections import Counter
 le = preprocessing.LabelEncoder()
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_ITERATIONS = 2
+NUMBER_OF_ITERATIONS = 100
 
 # import data
 def import_data():
     data=pd.read_table('Complied-Data.txt', sep='\t', delimiter=None, delim_whitespace=False, header=0, index_col=0)
-    X = (data.iloc[0:100, 1:150]) #NB: 150 is feature 1:149 for now, because of the long running time
+    X = (data.iloc[0:100, 1:-1]) #NB: 150 is feature 1:149 for now, because of the long running time
     y = data.iloc[0:100,0]
+    feature_names=(list(data))
     le.fit(y)
     y=le.transform(y)
-    return(X,y)
+    return(X,y, feature_names)
 
 # returns trainset and testset
 def split_data():
@@ -111,18 +114,37 @@ def save_best_model(best_method, result_rfecv, result_rf):
     #save best model
     joblib.dump(models_list[0][0], 'model.pkl')
     #print(models_list.index(max(models_list[0])))
+
+'''def most_important_features(rfecv_list, rf_list):
+    new_list = []
+    important_features_rfecv = []
+    global feature_names
+    for i in rfecv_list:
+        count = 1
+        for feature in i[3]:
+            new_list.append([feature, feature_names[count]])
+            count += 1
+        new_list.sort(reverse=True)
+        important_features_rfecv.append(new_list[0:51])
+    merged = list(chain(*important_features_rfecv))
+    print(merged)   
+    print(Counter(chain(merged)))'''
+
+
     
 def create_output(rfecv_list, rf_list):
     accuracy_rfecv = [item[1] for item in rfecv_list]
     accuracy_rf = [item[1] for item in rf_list]
     Nfeatures_rfecv = [item[2] for item in rfecv_list]
     Nfeatures_rf = [item[2] for item in rf_list]
+    
+   # most_important_features(rfecv_list, rf_list)
     best_method, highest_accuracy = accuracy_and_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)   
     save_best_model(best_method, rfecv_list, rf_list)
     
     
 # main
-X,y = import_data()
+X,y, feature_names = import_data()
 rfecv_list = []
 rf_list = []
 
