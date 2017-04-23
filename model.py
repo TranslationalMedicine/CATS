@@ -17,7 +17,7 @@ le = preprocessing.LabelEncoder()
 
 #Variables
 TEST_SIZE = 0.10
-NUMBER_OF_ITERATIONS = 10
+NUMBER_OF_ITERATIONS = 100
 
 # import data
 def import_data():
@@ -94,15 +94,18 @@ def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
         else:
             print('error')
         count+=1
+    
     plt.xlabel('iteration')
     plt.ylabel('Accuracy')
     plt.show()
+    
     if highest_rfecv > highest_rf:
         best_method, highest_accuracy = 'rfecv', highest_rfecv
     elif highest_rfecv < highest_rf:
         best_method, highest_accuracy = 'rf', highest_rf
     else:
         best_method, highest_accuracy = 'equal', highest_rfecv
+    
     mean_rfecv = np.mean(acc_rfecv)
     mean_rf = np.mean(acc_rf)
     std_rfecv = np.std(acc_rfecv)
@@ -111,7 +114,6 @@ def accuracy_and_features(acc_rfecv, acc_rf, f_rfecv, f_rf):
     return best_method, highest_accuracy
 
 def bar_plot_accuracy(mean_rfecv, mean_rf, std_rfecv, std_rf):
-
     fig, ax = plt.subplots()
     N=1
     width = 0.5
@@ -119,9 +121,8 @@ def bar_plot_accuracy(mean_rfecv, mean_rf, std_rfecv, std_rf):
     rects1 = ax.bar(ind, mean_rfecv, width, color='b', yerr=std_rfecv)
     rects2 = ax.bar(ind + width, mean_rf, width, color='g', yerr=std_rf)
     
-    # add some text for labels, title and axes ticks
-    ax.set_ylabel('Accuracy')
 
+    ax.set_ylabel('Accuracy')
     xTickMarks = (('', ''))
     xtickNames = ax.set_xticklabels(xTickMarks)
     plt.setp(xtickNames, rotation=45, fontsize=10)
@@ -137,7 +138,15 @@ def save_best_model(best_method, result_rfecv, result_rf):
     models_list = sorted(models_list, key=itemgetter(1), reverse=True)
     #save best model
     joblib.dump(models_list[0][0], 'model.pkl')
-    #print(models_list.index(max(models_list[0])))
+
+def accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf):
+    
+    rfecv = plt.scatter(Nfeatures_rfecv, accuracy_rfecv, marker='x', color='b')
+    rf = plt.scatter(Nfeatures_rf, accuracy_rf, marker='o', color='g')
+    plt.xlabel('Number of used features')
+    plt.ylabel('Accuracy')
+    plt.legend((rfecv, rf), ('Recursive Feature Elimination', 'Random Forest') , loc='upper right')
+    plt.show()
 
 '''def most_important_features(rfecv_list, rf_list):
     new_list = []
@@ -165,7 +174,7 @@ def create_output(rfecv_list, rf_list):
    # most_important_features(rfecv_list, rf_list)
     best_method, highest_accuracy = accuracy_and_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)   
     save_best_model(best_method, rfecv_list, rf_list)
-    
+    accuracy_versus_features(accuracy_rfecv, accuracy_rf, Nfeatures_rfecv, Nfeatures_rf)
     
 # main
 X,y, feature_names = import_data()
