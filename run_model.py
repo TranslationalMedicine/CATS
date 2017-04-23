@@ -1,4 +1,5 @@
 #### only for testing!
+### should be run like this. python3 run_model.py -i unlabelled_sample.txt -m model.pkl -o output.txt
 
 from sklearn.externals import joblib
 import pandas as pd
@@ -6,7 +7,7 @@ import numpy as np
 from sklearn import preprocessing
 le = preprocessing.LabelEncoder()
 
-
+#input for this should be unlabelled data file
 data=pd.read_table('Complied-Data.txt', sep='\t', delimiter=None, delim_whitespace=False, header=0, index_col=0)
 X = (data.iloc[0:100, 1:150]) #NB: 150 is feature 1:149 for now, because of the long running time
 y = data.iloc[0:100,0]
