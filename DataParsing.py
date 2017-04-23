@@ -31,8 +31,11 @@ fileData.close()
 # Remove the unwanted data and transpose the CGH Data matrix
 cghDataMatrix = np.matrix(cghData)
 cghDataMatrixTrans = cghDataMatrix.transpose()
-cghDataMatrixTrans = np.delete(cghDataMatrixTrans , [1,2,3], 0)
+#cghDataMatrixTrans = np.delete(cghDataMatrixTrans , [1,2,3], 0)
 cghDataList = cghDataMatrixTrans.tolist()
+#print(cghDataList)
+
+#print(cghDataList[1][1:])
 
 # Store the CGH Data into a dictionary
 for i in range(0,101):
@@ -40,6 +43,7 @@ for i in range(0,101):
     array = a.replace('"',"")
     cghDataDict[array] = cghDataList[i][1:]
 
+#print(cghDataDict['Chromosome'])
 # Get the data from the array groups file
 for line in fileGroups:
     lineTerm = line.rstrip("\n").split("\t")
@@ -48,7 +52,15 @@ for line in fileGroups:
 fileGroups.close()
 
 # Compile the final matrix - merge the data from the dictionaries based on Array
-compiledData.append(["Array","Group", *cghDataList[0][1:]])
+
+colHeader = []
+for i in range(1,len(cghDataList[0])):
+    #string = 'cghDataList[1][i], " - ", cghDataList[2][i]'
+    string = str(cghDataList[1][i]) + " - " + str(cghDataList[2][i])
+    colHeader.append(string)
+    
+compiledData.append(["Array","Group", *colHeader])
+
 for a,v in cghDataDict.items():
     if "Array" in a:
         #print(groupDataDict[a])
@@ -63,4 +75,3 @@ for i in compiledData:
     outputFile.write("\n")
 outputFile.close()
      
-  
