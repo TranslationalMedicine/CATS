@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+from sklearn import svm
+from sklearn.datasets import samples_generator
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import f_regression
+from sklearn.pipeline import Pipeline
+# generate some data to play with
+#==============================================================================
+# X, y = samples_generator.make_classification(
+#     n_informative=5, n_redundant=0, random_state=42)
+# # ANOVA SVM-C
+# anova_filter = SelectKBest(f_regression, k=5)
+# clf = svm.SVC(kernel='linear')
+# anova_svm = Pipeline([('anova', anova_filter), ('svc', clf)])
+# # You can set the parameters using the names issued
+# # For instance, fit using a k of 10 in the SelectKBest
+# # and a parameter 'C' of the svm
+# anova_svm.set_params(anova__k=10, svc__C=.1).fit(X, y)
+# #...                                              
+# Pipeline(steps=[...])
+# prediction = anova_svm.predict(X)
+# anova_svm.score(X, y)                        
+# #0.829...
+# # getting the selected features chosen by anova_filter
+# anova_svm.named_steps['anova'].get_support()
+# ... 
+# #array([False, False,  True,  True, False, False, True,  True, False,
+#       # True,  False,  True,  True, False, True,  False, True, True,
+#        #False, False], dtype=bool)
+# 
+#==============================================================================
+#import packages
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from itertools import chain
+from sklearn.cross_validation import train_test_split
+from sklearn.feature_selection import RFECV, SelectFromModel
+from sklearn.model_selection import cross_val_score, KFold
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.externals import joblib
+from operator import itemgetter
+from sklearn import preprocessing
+from collections import Counter
+le = preprocessing.LabelEncoder()
+
+#Variables
+TEST_SIZE = 0.10
+NUMBER_OF_ITERATIONS = 100
+
+# import data
+def import_data():
+    data=pd.read_table('Complied-Data.txt', sep='\t', delimiter=None, delim_whitespace=False, header=0, index_col=0)
+    X = (data.iloc[0:100, 1:2835])
+    y = data.iloc[0:100,0]
+    print (y)
+    feature_names=(list(data))
+    # print (feature_names)
+    le.fit(y)
+    print (y)
+    y=le.transform(y)
+    print (y)
+    return(X,y, feature_names)
+
+def split_data():
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE)
+    # print (X_train)
+    return(X_train, X_test, y_train, y_test)
+
+def random_forest(X_train,y_train, X_test, y_test):
+    feature_selection = SelectFromModel(SVC(kernel="linear"))
+    classification = RandomForestClassifier()
+    #Creating  pipeline for feature selection and classification
+    clf = Pipeline([
+            ('feature_selection', feature_selection),
+            ('classification', classification)])
+    cross_val_score(clf, X, y, cv=10, scoring='accuracy')
+    clf = clf.fit(X_train, y_train)
+    # Determine the accuracy of the SVC model on the test-data, get the used number of features and ranking of the importance of features
+    accuracy = clf.score(X_test, y_test)
+    print (accuracy)
+    joblib.dump(clf, 'model2.pkl')
+    Nfeatures = classification.n_features_
+    RankFeatures=classification.feature_importances_
+    return [clf, accuracy, Nfeatures, RankFeatures]
+
+X,y, feature_names = import_data()
+rfecv_list = []
+rf_list = []
+
+# Repeat model making
+for i in range(NUMBER_OF_ITERATIONS):
+    X_train, X_test, y_train, y_test = split_data()
+#    rfecv_list.append(recursive_feature_elimination_cv(X_train, y_train, X_test, y_test))
+    rf_list.append(random_forest(X_train,y_train, X_test, y_test))
+    print (rf_list)
+    print('finished round %d out of %d' %  (i+1, NUMBER_OF_ITERATIONS))
+
+# function for creating figures, print data ans save model
+#create_output(rfecv_list, rf_list)
