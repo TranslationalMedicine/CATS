@@ -39,7 +39,7 @@ def recursive_feature_elimination_cv(X_train,y_train, X_test, y_test):
     # Create the RFE object and compute a cross-validated score.
     svc = SVC(kernel="linear")
     # classifications
-    rfecv = RFECV(estimator=svc, step=1, cv=KFold(10), scoring='accuracy')
+    rfecv = RFECV(estimator=svc, step=1, cv=KFold(10), scoring='accuracy', n_jobs=-1)
     rfecv.fit(X_train, y_train)
     # Determine the accuracy of the SVC model on the test-data, get the used number of features and ranking of the importance of features
     accuracy=rfecv.score(X_test, y_test)
