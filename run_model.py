@@ -37,7 +37,7 @@ def parse_samples(inputFile):
     # Getting the required parts of the data
     i = len(data)
     j = len(data.iloc[0])
-    X = (data.iloc[0:i, 1:j]) #NB: 150 is feature 1:149 for now, because of the long running time
+    X = (data.iloc[0:i, 1:j])
     return (X)
 
 def main():
@@ -63,8 +63,6 @@ def main():
 
     if args.output_file is None:
         sys.exit('Output is not designated!')
-
-    # Start your coding
 
     # Getting the values from arguement parser
     outputFile = args.output_file
